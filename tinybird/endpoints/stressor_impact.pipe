@@ -1,0 +1,21 @@
+DESCRIPTION >
+    How often each stressor appears and the average mood on those days.
+
+NODE stressors
+SQL >
+    %
+    SELECT
+        s AS stressor,
+        count() AS entries,
+        round(avg(mood), 1) AS avg_mood,
+        round(avg(anxiety), 1) AS avg_anxiety
+    FROM mood_entries
+    ARRAY JOIN stressors AS s
+    WHERE user_id = {{ String(user_id, 'demo') }}
+      AND ts > now() - INTERVAL {{ Int32(days, 30) }} DAY
+    GROUP BY stressor
+    ORDER BY entries DESC
+
+TYPE endpoint
+
+TOKEN mood_canvas_app READ

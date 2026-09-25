@@ -1,0 +1,15 @@
+.env
+__pycache__/
+backend/static/paintings/*
+!backend/static/paintings/.gitkeep
+backend/static/exhibitions/*
+!backend/static/exhibitions/.gitkeep
+.venv/
+# local state: agent memory card, lab notebook, signals mirror
+backend/data/
+# Tinybird CLI login: contains an admin token
+.tinyb
+# machine-specific
+.DS_Store
+.claude/
+*.log

@@ -1,0 +1,28 @@
+DESCRIPTION >
+    Aggregates for one time window. The agent compares a baseline window with an experiment window.
+    The *_rate columns are the "levers" each experiment tries to move.
+
+NODE window
+SQL >
+    %
+    SELECT
+        count() AS n,
+        round(avg(mood), 2) AS mood,
+        round(avg(anxiety), 2) AS anxiety,
+        round(avg(energy), 2) AS energy,
+        countIf(isNotNull(sleep_hours)) AS sleep_reported,
+        round(if(countIf(isNotNull(sleep_hours)) > 0,
+                 countIf(sleep_hours < 6) / countIf(isNotNull(sleep_hours)), 0), 2) AS sleep_rate,
+        round(countIf(has(stressors, 'work')) / greatest(count(), 1), 2) AS work_rate,
+        round(countIf(NOT has(positives, 'exercise')) / greatest(count(), 1), 2) AS exercise_rate,
+        round(countIf(NOT has(positives, 'friends')) / greatest(count(), 1), 2) AS social_rate,
+        round(avg(exp_done), 2) AS adherence,
+        sum(risk_flag) AS risk
+    FROM mood_entries
+    WHERE user_id = {{ String(user_id, 'demo') }}
+      AND ts >= toDateTime({{ String(start, '2020-01-01 00:00:00') }})
+      AND ts < toDateTime({{ String(end, '2100-01-01 00:00:00') }})
+
+TYPE endpoint
+
+TOKEN mood_canvas_app READ

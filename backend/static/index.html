@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mood Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#ECEAF2; --surface:#F6F5FA; --ink:#24213A; --muted:#6A6681; --rule:#D4D0E0;
+  --pigment:#3B4FC4; --alert:#A8322A; --alert-bg:#F7E6E3;
+  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:"Literata", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --paper:#1A1824; --surface:#242131; --ink:#ECE9F5; --muted:#A29DB8; --rule:#37334A;
+         --pigment:#8C9BFF; --alert:#FF8A7F; --alert-bg:#3A2226; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--pigment)}
+:focus-visible{outline:3px solid var(--pigment);outline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+header{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;padding:28px 0 8px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2.2rem,5vw,3.6rem);letter-spacing:-.03em;line-height:1;margin:0}
+.privacy{font-size:.9rem;color:var(--muted);max-width:40ch;margin:0}
+
+/* Gallery wall: canvases hang higher on better days */
+.wall{position:relative;margin:24px 0 8px;padding:40px 0 0;overflow-x:auto}
+.wall-inner{display:flex;align-items:flex-end;gap:22px;min-height:360px;padding:0 4px 56px;min-width:max-content}
+.frame{position:relative;width:128px;flex:none;transition:transform .25s ease}
+.frame .canvas{width:128px;height:128px;border:6px solid var(--surface);box-shadow:0 10px 24px -12px rgba(20,16,40,.45);background-size:cover;background-position:center}
+.frame .date{position:absolute;left:0;right:0;bottom:-30px;text-align:center;font-family:var(--display);font-size:.8rem;color:var(--muted)}
+.frame .t{position:absolute;left:-10px;right:-10px;top:-26px;text-align:center;font-size:.78rem;color:var(--muted);opacity:0;transition:opacity .2s}
+.frame:hover .t,.frame:focus-within .t{opacity:1}
+.frame.new .canvas{animation:hang .9s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes hang{from{transform:translateY(-60px) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
+.wall-note{font-size:.9rem;color:var(--muted);margin:0 0 40px}
+.empty{color:var(--muted);font-style:italic;padding:60px 0}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;border-top:1px solid var(--rule);padding-top:36px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+h2{font-family:var(--display);font-weight:600;font-size:1.6rem;letter-spacing:-.01em;margin:0 0 12px}
+textarea{width:100%;min-height:220px;resize:vertical;padding:18px;font:inherit;font-size:1.05rem;line-height:1.7;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:4px}
+.row{display:flex;align-items:center;gap:16px;margin-top:14px;flex-wrap:wrap}
+button{font-family:var(--display);font-weight:600;font-size:1rem;padding:12px 22px;border:0;border-radius:999px;background:var(--pigment);color:#fff;cursor:pointer}
+button:disabled{opacity:.55;cursor:progress}
+.hint{font-size:.88rem;color:var(--muted)}
+
+.result .painting{width:100%;aspect-ratio:1;border:10px solid var(--surface);box-shadow:0 18px 40px -20px rgba(20,16,40,.5);background-size:cover;background-position:center}
+.result h3{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:18px 0 4px}
+.reflection{font-style:italic;margin:0 0 16px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.chip{font-size:.82rem;padding:3px 10px;border:1px solid var(--rule);border-radius:999px;color:var(--muted)}
+.resources a{display:block;padding:10px 0;border-top:1px solid var(--rule);text-decoration:none}
+.resources a span{display:block;font-size:.85rem;color:var(--muted)}
+.crisis{background:var(--alert-bg);border-left:4px solid var(--alert);padding:20px 22px;border-radius:4px}
+.crisis p{margin:0 0 12px}
+.crisis a{display:block;font-family:var(--display);font-weight:600;color:var(--alert);margin:6px 0}
+.placeholder{color:var(--muted);font-style:italic}
+
+.patterns{border-top:1px solid var(--rule);margin-top:48px;padding:36px 0 64px;display:grid;grid-template-columns:3fr 2fr;gap:40px}
+@media (max-width:820px){.patterns{grid-template-columns:1fr}}
+.chartbox{position:relative;height:280px}
+.sentences p{margin:0 0 14px;max-width:48ch}
+.bar{display:grid;grid-template-columns:110px 1fr 36px;align-items:center;gap:10px;font-size:.9rem;margin:6px 0}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--pigment);opacity:.75}
+
+/* The agent: experiment card + lab notebook */
+.agent{display:grid;grid-template-columns:2fr 3fr;gap:40px;border-top:1px solid var(--rule);padding:36px 0 44px}
+@media (max-width:820px){.agent{grid-template-columns:1fr}}
+.kicker{font-family:var(--display);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.exp{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:20px 22px}
+.exp h3{font-family:var(--display);font-weight:600;font-size:1.25rem;margin:0 0 8px;line-height:1.3}
+.exp p{margin:0 0 10px}
+.exp .q{font-style:italic;color:var(--muted)}
+.habits{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+.habit{font-size:.82rem;padding:3px 10px;border-radius:999px;background:var(--pigment);color:#fff}
+.meter{margin-top:18px;font-size:.88rem;color:var(--muted)}
+.meter b{font-family:var(--display);color:var(--ink)}
+details{margin-top:10px;font-size:.85rem}
+details pre{white-space:pre-wrap;word-break:break-word;background:var(--surface);border:1px solid var(--rule);padding:12px;border-radius:4px;max-height:260px;overflow:auto;font-size:.78rem}
+button.ghost{background:transparent;color:var(--pigment);border:1px solid var(--pigment)}
+.paused{background:var(--alert-bg);border-left:4px solid var(--alert);padding:14px 18px;border-radius:4px;margin-bottom:14px}
+.log{max-height:520px;overflow:auto;padding-right:6px}
+.cycle{border-top:1px solid var(--rule);padding:12px 0 4px}
+.cycle>.kicker{margin-bottom:8px}
+.ev{display:grid;grid-template-columns:78px 1fr;gap:12px;margin:0 0 12px}
+.ev .ph{display:inline-block;font-family:var(--display);font-weight:600;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 0;border-radius:999px;text-align:center;align-self:start;color:#fff}
+.ev .ph.plan{background:#3B4FC4}.ev .ph.act{background:#3F9C7E}.ev .ph.observe{background:#8A6BB8}.ev .ph.correct{background:#C0673B}
+.ev b{display:block;font-family:var(--display);font-weight:600;font-size:.98rem;line-height:1.35}
+.ev span{display:block;font-size:.9rem;color:var(--muted)}
+.ev a{font-size:.85rem;display:block}
+button.rec{display:inline-flex;align-items:center;gap:8px}
+button.rec[aria-pressed="true"]{background:var(--alert);border-color:var(--alert);color:#fff}
+button.rec .dot{width:10px;height:10px;border-radius:50%;background:currentColor}
+button.rec[aria-pressed="true"] .dot{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.heard{font-size:.9rem;color:var(--muted);margin:10px 0 0}
+/* weekly exhibitions */
+.exhibits{border-top:1px solid var(--rule);padding:36px 0 44px}
+.exhibits-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.weeks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px}
+.week{display:grid;gap:8px;align-content:start}
+.week .pano{aspect-ratio:2/1;border:6px solid var(--surface);box-shadow:0 10px 24px -14px rgba(20,16,40,.45);background:var(--surface) center/cover no-repeat;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px}
+.week .pano img{width:28%;aspect-ratio:1;object-fit:cover;opacity:.75}
+.week .pano .none{font-size:.85rem;color:var(--muted);font-style:italic}
+.week b{font-family:var(--display);font-weight:600;line-height:1.3}
+.week .meta{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.week .acts{display:flex;gap:8px;flex-wrap:wrap}
+.week button,.small{font-size:.88rem;padding:8px 14px}
+.exp-tag{font-family:var(--display);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--pigment)}
+
+/* share */
+.frame .share{position:absolute;right:4px;bottom:4px;background:var(--surface);font-size:.72rem;padding:4px 10px;opacity:0;transition:opacity .2s}
+.frame:hover .share,.frame:focus-within .share{opacity:1}
+dialog.share-dlg{border:0;border-radius:8px;padding:0;background:var(--paper);color:var(--ink);width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog.share-dlg::backdrop{background:rgba(20,16,40,.55)}
+.share-body{display:grid;gap:14px;padding:22px;overflow:auto;max-height:calc(100vh - 32px)}
+.share-body canvas{width:100%;height:auto;border-radius:4px;box-shadow:0 12px 30px -16px rgba(20,16,40,.6)}
+.share-body label{font-size:.9rem;display:grid;gap:4px}
+.share-body select{font:inherit;font-size:.95rem;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink)}
+.share-body .check{display:flex;gap:8px;align-items:center}
+.share-body .acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.share-body a.dl{font-family:var(--display);font-weight:600;font-size:.88rem;padding:8px 14px;border:1px solid var(--pigment);border-radius:999px;text-decoration:none}
+
+.did{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:.95rem}
+.did input{width:18px;height:18px;accent-color:var(--pigment)}
+
+@media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Mood Canvas</h1>
+    <p class="privacy">An agent that runs small, safe experiments on your wellbeing, week after week. Your words are read by a private model and never stored.</p>
+  </header>
+
+  <section class="wall" aria-label="Your recent paintings">
+    <div class="wall-inner" id="wall"><p class="empty">Your paintings will hang here.</p></div>
+  </section>
+  <p class="wall-note">Each painting hangs higher on better days.</p>
+
+  <section class="agent" aria-label="Your wellbeing agent">
+    <div>
+      <p class="kicker">This week's experiment</p>
+      <div id="paused"></div>
+      <div class="exp" id="exp"><p class="placeholder">Loading the agent…</p></div>
+      <div class="row">
+        <button id="step">Run next week</button>
+        <span class="hint" id="stepStatus" role="status" aria-live="polite"></span>
+      </div>
+      <p class="hint">Demo mode: each click simulates a week of check-ins, then the agent measures, corrects and plans.</p>
+      <div class="meter" id="meter"></div>
+      <details><summary>What the agent remembers</summary><pre id="card"></pre></details>
+    </div>
+    <div>
+      <h2>Lab notebook</h2>
+      <div class="log" id="log"><p class="placeholder">The agent's plans, results and corrections appear here.</p></div>
+    </div>
+  </section>
+
+  <section class="exhibits" aria-label="Weekly exhibitions">
+    <div class="exhibits-head">
+      <h2>Weekly exhibitions</h2>
+      <p class="hint">Each week's paintings, composed by FLUX into one panorama that reads left to right as the week.</p>
+    </div>
+    <div class="weeks" id="weeks"><p class="placeholder">Weeks appear after your first check-ins.</p></div>
+  </section>
+
+  <section class="grid">
+    <div>
+      <h2>How was today?</h2>
+      <label for="entry" class="hint">Write as much or as little as you like.</label>
+      <textarea id="entry" placeholder="Slept badly again. The team meeting ran long and I felt invisible. Walked home through the park, which helped a little."></textarea>
+      <label class="did" id="didWrap" hidden><input type="checkbox" id="did"> <span id="didText"></span></label>
+      <div class="row">
+        <button id="go">Paint my day</button>
+        <button class="ghost rec" id="mic" hidden aria-pressed="false"><span class="dot" aria-hidden="true"></span><span id="micLabel">Speak instead</span></button>
+        <span class="hint" id="status" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="result" id="result">
+      <h2>Today's canvas</h2>
+      <p class="placeholder">Write a check-in and your painting will appear here.</p>
+    </div>
+  </section>
+
+  <section class="patterns">
+    <div>
+      <h2>Your last six weeks</h2>
+      <div class="chartbox"><canvas id="chart" aria-label="Mood, energy and anxiety over time"></canvas></div>
+    </div>
+    <div>
+      <h2>What we noticed</h2>
+      <div class="sentences" id="sentences"><p class="placeholder">Patterns appear after a few check-ins.</p></div>
+      <div id="bars"></div>
+    </div>
+  </section>
+</div>
+
+<dialog class="share-dlg" id="shareDlg" aria-labelledby="shareTitle">
+  <div class="share-body">
+    <h2 id="shareTitle" style="margin:0">Share how you're doing</h2>
+    <canvas id="shareCard" width="1080" height="1350" role="img" aria-label="Preview of the share card"></canvas>
+    <p class="hint" style="margin:0">Only the painting, its title and the words you pick below are included. Never your entry, your scores or your tags.</p>
+    <label for="caption">Caption
+      <select id="caption">
+        <option>This is how I'm doing.</option>
+        <option>A heavy one today.</option>
+        <option>Getting there.</option>
+        <option>A good day.</option>
+        <option value="">No caption</option>
+      </select>
+    </label>
+    <label class="check" for="withDate"><input type="checkbox" id="withDate"> Include the date</label>
+    <div class="acts">
+      <button id="nativeShare" hidden>Share…</button>
+      <button class="ghost small" id="copyCard">Copy image</button>
+      <a class="dl" id="dlCard" href="#" download="mood-canvas.png">Download</a>
+      <button class="ghost small" id="closeShare">Close</button>
+      <span class="hint" id="shareStatus" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const bg = e => e.image_path ? `url('${e.image_path}')`
+  : `linear-gradient(135deg, ${(e.palette && e.palette.length ? e.palette : ["#999","#bbb","#ddd"]).join(",")})`;
+let chart, galleryItems = {};
+
+async function loadGallery(newId){
+  try{
+    const items = (await (await fetch("/api/gallery")).json()).reverse();
+    if(!items.length) return;
+    galleryItems = Object.fromEntries(items.map(e => [e.entry_id, e]));
+    $("#wall").innerHTML = items.map(e => `
+      <figure class="frame ${e.entry_id===newId?"new":""}" style="margin:0 0 ${(e.mood-1)*24}px" tabindex="0"
+              aria-label="${esc(e.title)}, mood ${e.mood} of 10">
+        <div class="t">${esc(e.title)}</div>
+        <div class="canvas" style="background-image:${bg(e)}"></div>
+        ${e.image_path ? `<button class="ghost share" data-share="${esc(e.entry_id)}" aria-label="Share ${esc(e.title)}">Share</button>` : ""}
+        <figcaption class="date">${new Date(e.ts.replace(" ","T")+"Z").toLocaleDateString(undefined,{month:"short",day:"numeric"})}</figcaption>
+      </figure>`).join("");
+    $(".wall").scrollLeft = $(".wall").scrollWidth;
+  }catch(err){ console.error(err) }
+}
+
+async function loadInsights(){
+  try{
+    const d = await (await fetch("/api/insights")).json();
+    const css = getComputedStyle(document.documentElement);
+    const ink = css.getPropertyValue("--muted").trim(), pig = css.getPropertyValue("--pigment").trim();
+    const labels = d.daily.map(x => x.day.slice(5));
+    const ds = [
+      {label:"Mood", data:d.daily.map(x=>x.mood), borderColor:pig, borderWidth:3},
+      {label:"Energy", data:d.daily.map(x=>x.energy), borderColor:"#3F9C7E", borderDash:[2,4]},
+      {label:"Anxiety", data:d.daily.map(x=>x.anxiety), borderColor:"#C0673B", borderDash:[8,5]},
+    ].map(s => ({...s, tension:.35, pointRadius:0, fill:false}));
+    chart?.destroy();
+    chart = new Chart($("#chart"), {type:"line", data:{labels, datasets:ds},
+      options:{maintainAspectRatio:false, scales:{y:{min:1,max:10,ticks:{color:ink},grid:{color:"transparent"}},
+        x:{ticks:{color:ink,maxTicksLimit:8},grid:{display:false}}},
+        plugins:{legend:{labels:{color:ink,usePointStyle:true,pointStyle:"line"}}}}});
+    if(d.sentences.length) $("#sentences").innerHTML = d.sentences.map(s=>`<p>${esc(s)}</p>`).join("");
+    const max = Math.max(1, ...d.stressors.map(s=>s.entries));
+    $("#bars").innerHTML = d.stressors.slice(0,5).map(s =>
+      `<div class="bar"><span>${esc(s.stressor)}</span><i style="width:${s.entries/max*100}%"></i><span>${s.entries}</span></div>`).join("");
+  }catch(err){ console.error(err) }
+}
+
+function renderResult(r){
+  if(r.crisis){
+    $("#result").innerHTML = `<h2>Before anything else</h2><div class="crisis"><p>${esc(r.crisis.message)}</p>
+      ${r.crisis.options.map(o=>`<a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.action)}: ${esc(o.name)}</a>`).join("")}</div>`;
+    return;
+  }
+  const e = r.entry;
+  const chips = [...e.emotions, ...e.stressors, ...e.positives].map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+  const res = r.resources.length ? `<div class="resources"><h3>Might help</h3>${r.resources.map(x =>
+      `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}<span>${esc(x.description)}</span></a>`).join("")}</div>` : "";
+  $("#result").innerHTML = `<h2>Today's canvas</h2>
+    <div class="painting" style="background-image:${bg(e)}" role="img" aria-label="${esc(e.title)}"></div>
+    <h3>${esc(e.title)}</h3><p class="reflection">${esc(e.reflection)}</p><div class="chips">${chips}</div>
+    ${e.image_path ? `<p><button class="ghost small" id="shareToday">Share this painting</button></p>` : ""}${res}`;
+  $("#shareToday")?.addEventListener("click", () => openShare({src:e.image_path, title:e.title, date:e.ts}));
+}
+
+$("#go").addEventListener("click", async () => {
+  const text = $("#entry").value.trim();
+  if(text.length < 3){ $("#status").textContent = "Write a few words first."; return; }
+  $("#go").disabled = true; $("#status").textContent = "Reading your day and mixing colors…";
+  try{
+    const res = await fetch("/api/entries", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text, did_experiment: $("#didWrap").hidden ? null : $("#did").checked})});
+    if(!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    const r = await res.json();
+    renderResult(r);
+    $("#entry").value = ""; $("#status").textContent = r.crisis ? "Saved. Please look at the support options first." : "Painted and saved.";
+    $("#did").checked = false;
+    setTimeout(() => { loadGallery(r.entry?.entry_id); loadInsights(); loadAgent(); loadWeeks(); }, 1500);
+  }catch(err){ $("#status").textContent = "Couldn't paint this one: " + err.message; }
+  finally{ $("#go").disabled = false; }
+});
+
+const PH = {plan:"Plan", act:"Act", observe:"Observe", correct:"Correct"};
+const fmt = d => new Date(d+"T00:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"});
+
+function renderAgent(a){
+  const c = a.card, x = c.active;
+  $("#paused").innerHTML = c.paused ? `<div class="paused"><p style="margin:0 0 10px">Experiments are paused because a check-in raised a safety flag. Nothing is lost.</p>
+    <button class="ghost" id="resume">Resume experiments</button></div>` : "";
+  $("#resume")?.addEventListener("click", () => runStep(true));
+  const habits = c.habits.length ? `<div class="habits">${c.habits.map(h=>`<span class="habit">Keeping: ${esc(a.drivers[h].habit)}</span>`).join("")}</div>` : "";
+  $("#exp").innerHTML = x ? `<h3>${esc(x.habit)}</h3>
+      <p>${esc(x.hypothesis)}</p>
+      <p class="q">Daily question: “${esc(x.ask)}”</p>
+      <p class="hint" style="margin:0">${fmt(x.start)} – ${fmt(x.end)} · compared against ${fmt(x.baseline.start)} – ${fmt(x.baseline.end)}</p>${habits}`
+    : `<h3>${c.cycle ? "Between experiments" : "Observing your baseline"}</h3>
+      <p>${c.cycle ? "No untested ideas right now. The agent keeps what worked and watches for new patterns."
+                   : "Two weeks of check-ins so far. Next, the agent looks for what moves your mood and designs a small experiment."}</p>${habits}`;
+  $("#didWrap").hidden = !x;
+  if(x) $("#didText").textContent = `I did today's experiment: ${x.habit}`;
+  $("#meter").innerHTML = `Working memory: <b>${a.card_tokens} tokens</b>, covering ${a.entries_seen} check-ins over ${c.cycle} weekly ${c.cycle===1?"cycle":"cycles"}. The agent never re-reads your entries or its old notes.`;
+  $("#card").textContent = JSON.stringify(c, null, 2);
+  if(!a.log.length) return;
+  const cycles = {};
+  a.log.forEach(e => (cycles[e.cycle] ??= []).push(e));
+  $("#log").innerHTML = Object.entries(cycles).reverse().map(([n, evs]) => `<div class="cycle">
+      <p class="kicker">Cycle ${n} · week of ${fmt(evs[0].sim_week_of)}</p>
+      ${evs.map(e => `<div class="ev"><span class="ph ${esc(e.phase)}">${PH[e.phase]||esc(e.phase)}</span><div>
+        <b>${esc(e.title)}</b><span>${esc(e.detail)}</span>
+        ${(e.evidence?.sources||[]).map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">Source: ${esc(s.title)}</a>`).join("")}
+      </div></div>`).join("")}</div>`).join("");
+  $("#log").scrollTop = 0;
+}
+
+async function loadAgent(){
+  try{ renderAgent(await (await fetch("/api/agent")).json()) }catch(err){ console.error(err) }
+}
+
+async function runStep(resume=false){
+  $("#step").disabled = true; $("#stepStatus").textContent = "Measuring, reflecting, planning…";
+  try{
+    const res = await fetch(`/api/agent/step?simulate=true&resume=${resume}`, {method:"POST"});
+    if(!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    const a = await res.json();
+    renderAgent(a);
+    $("#stepStatus").textContent = a.message || "Week done.";
+    loadGallery(); loadInsights(); loadWeeks();
+  }catch(err){ $("#stepStatus").textContent = "The agent couldn't finish this cycle: " + err.message; }
+  finally{ $("#step").disabled = false; }
+}
+$("#step").addEventListener("click", () => runStep(false));
+
+// ---------- weekly exhibitions ----------
+const fmtRange = w => `${fmt(w.start)} – ${fmt(w.end)}`;
+let weeksData = [];
+async function loadWeeks(){
+  try{
+    weeksData = await (await fetch("/api/exhibitions")).json();
+    if(!weeksData.length) return;
+    $("#weeks").innerHTML = weeksData.slice().reverse().map(w => `<div class="week">
+      <div class="pano" ${w.image ? `style="background-image:url('${w.image}')" role="img" aria-label="Exhibition for ${fmtRange(w)}"` : ""}>
+        ${w.image ? "" : w.paintings.length ? w.paintings.slice(0,3).map(p => `<img src="${p}" alt="">`).join("") : `<span class="none">No paintings this week</span>`}
+      </div>
+      ${w.experiment ? `<span class="exp-tag">Experiment</span>` : ""}
+      <b>${esc(w.label)}</b>
+      <span class="meta">${fmtRange(w)} · ${w.entries} check-in${w.entries===1?"":"s"} · average mood ${w.avg_mood} · ${w.paintings.length} painting${w.paintings.length===1?"":"s"}</span>
+      <div class="acts">
+        ${w.image ? `<button class="ghost" data-share-week="${w.start}">Share</button>`
+          : `<button class="ghost" data-exhibit="${w.start}" ${w.paintings.length ? "" : "disabled"}>Create exhibition</button>`}
+      </div>
+    </div>`).join("");
+  }catch(err){ console.error(err) }
+}
+$("#weeks").addEventListener("click", async ev => {
+  const make = ev.target.closest("[data-exhibit]"), share = ev.target.closest("[data-share-week]");
+  if(share){
+    const w = weeksData.find(x => x.start === share.dataset.shareWeek);
+    return openShare({src:w.image, title:`The week of ${fmt(w.start)}`, date:w.start});
+  }
+  if(!make) return;
+  make.disabled = true; make.textContent = "Composing the week… (about 20 s)";
+  try{
+    const res = await fetch(`/api/exhibitions/${make.dataset.exhibit}`, {method:"POST"});
+    if(!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    await loadWeeks();
+  }catch(err){ make.disabled = false; make.textContent = "Try again"; make.title = err.message; }
+});
+
+// ---------- share a painting: drawn locally, only the image and chosen words ----------
+let shareItem = null, shareURL = null;
+$("#wall").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-share]"); if(!b) return;
+  const e = galleryItems[b.dataset.share];
+  openShare({src:e.image_path, title:e.title, date:e.ts});
+});
+function loadImg(src){ return new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = src; }); }
+async function drawCard(){
+  const c = $("#shareCard"), x = c.getContext("2d"), img = await loadImg(shareItem.src);
+  await Promise.all(['italic 44px Literata','600 30px "Bricolage Grotesque"','800 28px "Bricolage Grotesque"'].map(f => document.fonts.load(f)));
+  const W = 1080, pad = 84, iw = W - pad*2, ih = Math.round(iw * img.naturalHeight / img.naturalWidth);
+  const caption = $("#caption").value, withDate = $("#withDate").checked;
+  c.width = W; c.height = pad + ih + 300;
+  x.fillStyle = "#F6F5FA"; x.fillRect(0, 0, W, c.height);
+  x.save(); x.shadowColor = "rgba(20,16,40,.35)"; x.shadowBlur = 40; x.shadowOffsetY = 18;
+  x.fillStyle = "#FFFFFF"; x.fillRect(pad - 14, pad - 14, iw + 28, ih + 28); x.restore();
+  x.drawImage(img, pad, pad, iw, ih);
+  let y = pad + ih + 96;
+  x.fillStyle = "#24213A"; x.font = "italic 44px Literata, Georgia, serif";
+  if(caption){ x.fillText(caption, pad, y); y += 58; }
+  x.fillStyle = "#6A6681"; x.font = '600 30px "Bricolage Grotesque", Arial, sans-serif';
+  const d = withDate ? " · " + new Date(shareItem.date.slice(0,10) + "T00:00:00").toLocaleDateString(undefined,{month:"long",day:"numeric"}) : "";
+  x.fillText(`“${shareItem.title}”${d}`, pad, y);
+  x.fillStyle = "#3B4FC4"; x.font = '800 28px "Bricolage Grotesque", Arial, sans-serif'; x.textAlign = "right";
+  x.fillText("Mood Canvas", W - pad, c.height - 56); x.textAlign = "left";
+  const blob = await new Promise(r => c.toBlob(r, "image/png"));
+  if(shareURL) URL.revokeObjectURL(shareURL);
+  shareURL = URL.createObjectURL(blob);
+  $("#dlCard").href = shareURL;
+  $("#dlCard").download = `mood-canvas-${shareItem.date.slice(0,10)}.png`;
+  const file = new File([blob], $("#dlCard").download, {type:"image/png"});
+  $("#nativeShare").hidden = !(navigator.canShare && navigator.canShare({files:[file]}));
+  $("#nativeShare").onclick = () => navigator.share({files:[file], text: caption || undefined}).catch(() => {});
+  $("#copyCard").onclick = async () => {
+    try{ await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]); $("#shareStatus").textContent = "Copied."; }
+    catch{ $("#shareStatus").textContent = "Copying isn't available here. Use Download instead."; }
+  };
+}
+function openShare(item){
+  shareItem = item; $("#shareStatus").textContent = "";
+  $("#shareDlg").showModal(); drawCard();
+}
+$("#caption").addEventListener("change", drawCard);
+$("#withDate").addEventListener("change", drawCard);
+$("#closeShare").addEventListener("click", () => $("#shareDlg").close());
+
+// ---------- voice check-ins: recorded here, transcribed by a local Liquid audio model, never stored ----------
+let rec = null, recTimer = null, recStart = 0;
+const MAX_REC_MS = 120000;
+
+async function toWav16k(blob){
+  const ctx = new AudioContext();
+  const src = await ctx.decodeAudioData(await blob.arrayBuffer());
+  ctx.close();
+  const off = new OfflineAudioContext(1, Math.ceil(src.duration * 16000), 16000);
+  const node = off.createBufferSource(); node.buffer = src; node.connect(off.destination); node.start();
+  const pcm = (await off.startRendering()).getChannelData(0);
+  const buf = new ArrayBuffer(44 + pcm.length * 2), v = new DataView(buf);
+  const str = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0,"RIFF"); v.setUint32(4, 36 + pcm.length*2, true); str(8,"WAVE"); str(12,"fmt ");
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,16000,true);
+  v.setUint32(28,32000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); str(36,"data"); v.setUint32(40, pcm.length*2, true);
+  pcm.forEach((x, i) => v.setInt16(44 + i*2, Math.max(-1, Math.min(1, x)) * 0x7fff, true));
+  return new Blob([buf], {type:"audio/wav"});
+}
+
+async function startRec(){
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch{ $("#status").textContent = "Microphone access was blocked. You can still type."; return; }
+  const chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = () => { stream.getTracks().forEach(t => t.stop()); sendVoice(new Blob(chunks, {type: rec.mimeType})); };
+  rec.start(); recStart = Date.now();
+  $("#mic").setAttribute("aria-pressed","true"); $("#go").disabled = true;
+  recTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - recStart) / 1000);
+    $("#micLabel").textContent = `Stop and paint · ${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+    if(Date.now() - recStart > MAX_REC_MS) stopRec();
+  }, 250);
+  $("#status").textContent = "Listening…";
+}
+
+function stopRec(){
+  clearInterval(recTimer);
+  $("#mic").setAttribute("aria-pressed","false"); $("#micLabel").textContent = "Speak instead";
+  if(rec && rec.state !== "inactive") rec.stop();
+}
+
+async function sendVoice(blob){
+  $("#mic").disabled = true; $("#go").disabled = true;
+  $("#status").textContent = "Transcribing on this device, then mixing colors…";
+  try{
+    const wav = await toWav16k(blob);
+    const did = $("#didWrap").hidden ? "" : `?did_experiment=${$("#did").checked}`;
+    const res = await fetch(`/api/voice${did}`, {method:"POST", headers:{"Content-Type":"audio/wav"}, body:wav});
+    if(!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    const r = await res.json();
+    renderResult(r);
+    if(!r.crisis) $("#result").insertAdjacentHTML("beforeend", `<p class="heard">Heard: “${esc(r.transcript)}” (the recording was not kept)</p>`);
+    $("#status").textContent = r.crisis ? "Saved. Please look at the support options first." : "Painted and saved."; $("#did").checked = false;
+    setTimeout(() => { loadGallery(r.entry?.entry_id); loadInsights(); loadAgent(); loadWeeks(); }, 1500);
+  }catch(err){ $("#status").textContent = "Couldn't use that recording: " + err.message; }
+  finally{ $("#mic").disabled = false; $("#go").disabled = false; }
+}
+
+$("#mic").addEventListener("click", () => rec && rec.state === "recording" ? stopRec() : startRec());
+(async () => {
+  try{
+    const ok = window.MediaRecorder && (await (await fetch("/api/voice")).json()).available;
+    $("#mic").hidden = !ok;
+  }catch{}
+})();
+
+loadGallery(); loadInsights(); loadAgent(); loadWeeks();
+</script>
+</body>
+</html>

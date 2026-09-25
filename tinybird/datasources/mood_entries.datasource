@@ -1,0 +1,26 @@
+DESCRIPTION >
+    One row per journal check-in. Signals only: the raw journal text is never stored here.
+
+SCHEMA >
+    `entry_id` String `json:$.entry_id`,
+    `user_id` String `json:$.user_id`,
+    `ts` DateTime `json:$.ts`,
+    `mood` UInt8 `json:$.mood`,
+    `energy` UInt8 `json:$.energy`,
+    `anxiety` UInt8 `json:$.anxiety`,
+    `sleep_hours` Nullable(Float32) `json:$.sleep_hours`,
+    `emotions` Array(String) `json:$.emotions[:]`,
+    `stressors` Array(String) `json:$.stressors[:]`,
+    `positives` Array(String) `json:$.positives[:]`,
+    `risk_flag` UInt8 `json:$.risk_flag`,
+    `palette` Array(String) `json:$.palette[:]`,
+    `title` String `json:$.title`,
+    `image_path` String `json:$.image_path`,
+    `exp_id` String `json:$.exp_id` DEFAULT '',
+    `exp_done` UInt8 `json:$.exp_done` DEFAULT 0
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(ts)"
+ENGINE_SORTING_KEY "user_id, ts"
+
+TOKEN mood_canvas_app APPEND

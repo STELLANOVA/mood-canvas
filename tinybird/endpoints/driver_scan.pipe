@@ -1,0 +1,36 @@
+DESCRIPTION >
+    For each candidate driver: how many check-ins show it, and mood with vs without it.
+    The agent ranks untested drivers by gap x evidence to decide what to test next.
+
+NODE scan_window
+SQL >
+    %
+    SELECT mood, sleep_hours, stressors, positives
+    FROM mood_entries
+    WHERE user_id = {{ String(user_id, 'demo') }}
+      AND ts >= toDateTime({{ String(start, '2020-01-01 00:00:00') }})
+      AND ts < toDateTime({{ String(end, '2100-01-01 00:00:00') }})
+
+NODE scan
+SQL >
+    SELECT 'sleep' AS driver,
+           countIf(sleep_hours < 6) AS n_with,
+           round(avgIf(mood, sleep_hours < 6), 2) AS mood_with,
+           round(avgIf(mood, sleep_hours >= 6), 2) AS mood_without
+    FROM scan_window
+    UNION ALL
+    SELECT 'work', countIf(has(stressors, 'work')),
+           round(avgIf(mood, has(stressors, 'work')), 2), round(avgIf(mood, NOT has(stressors, 'work')), 2)
+    FROM scan_window
+    UNION ALL
+    SELECT 'exercise', countIf(NOT has(positives, 'exercise')),
+           round(avgIf(mood, NOT has(positives, 'exercise')), 2), round(avgIf(mood, has(positives, 'exercise')), 2)
+    FROM scan_window
+    UNION ALL
+    SELECT 'social', countIf(NOT has(positives, 'friends')),
+           round(avgIf(mood, NOT has(positives, 'friends')), 2), round(avgIf(mood, has(positives, 'friends')), 2)
+    FROM scan_window
+
+TYPE endpoint
+
+TOKEN mood_canvas_app READ

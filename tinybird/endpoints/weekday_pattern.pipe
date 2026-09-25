@@ -1,0 +1,20 @@
+DESCRIPTION >
+    Mood and anxiety by day of week (1 = Monday, 7 = Sunday).
+
+NODE weekday
+SQL >
+    %
+    SELECT
+        toDayOfWeek(ts) AS dow,
+        round(avg(mood), 1) AS mood,
+        round(avg(anxiety), 1) AS anxiety,
+        count() AS entries
+    FROM mood_entries
+    WHERE user_id = {{ String(user_id, 'demo') }}
+      AND ts > now() - INTERVAL {{ Int32(days, 60) }} DAY
+    GROUP BY dow
+    ORDER BY dow
+
+TYPE endpoint
+
+TOKEN mood_canvas_app READ

@@ -1,0 +1,21 @@
+DESCRIPTION >
+    Daily averages of mood, energy, anxiety and sleep for the trend chart.
+
+NODE daily
+SQL >
+    %
+    SELECT
+        toDate(ts) AS day,
+        round(avg(mood), 1) AS mood,
+        round(avg(energy), 1) AS energy,
+        round(avg(anxiety), 1) AS anxiety,
+        round(avg(sleep_hours), 1) AS sleep
+    FROM mood_entries
+    WHERE user_id = {{ String(user_id, 'demo') }}
+      AND ts > now() - INTERVAL {{ Int32(days, 30) }} DAY
+    GROUP BY day
+    ORDER BY day
+
+TYPE endpoint
+
+TOKEN mood_canvas_app READ

@@ -1,0 +1,15 @@
+DESCRIPTION >
+    The agent's lab notebook: one row per observe / correct / plan / act step. Aggregates and prose only, never journal text.
+
+SCHEMA >
+    `ts` DateTime `json:$.ts`,
+    `user_id` String `json:$.user_id`,
+    `cycle` UInt16 `json:$.cycle`,
+    `phase` String `json:$.phase`,
+    `title` String `json:$.title`,
+    `detail` String `json:$.detail`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "user_id, ts"
+
+TOKEN mood_canvas_app APPEND

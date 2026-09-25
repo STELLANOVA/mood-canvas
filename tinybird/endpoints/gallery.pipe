@@ -1,0 +1,15 @@
+DESCRIPTION >
+    Most recent canvases for the gallery wall.
+
+NODE latest_canvases
+SQL >
+    %
+    SELECT entry_id, ts, mood, energy, anxiety, palette, title, image_path, risk_flag
+    FROM mood_entries
+    WHERE user_id = {{ String(user_id, 'demo') }}
+    ORDER BY ts DESC
+    LIMIT {{ Int32(limit, 14) }}
+
+TYPE endpoint
+
+TOKEN mood_canvas_app READ
