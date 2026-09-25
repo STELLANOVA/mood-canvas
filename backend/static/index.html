@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mood Canvas</title>
+<script>try{const t=localStorage.getItem("mc-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&display=swap" rel="stylesheet">
@@ -19,14 +20,22 @@
   --body:"Literata", Georgia, "Times New Roman", serif;
   --radius:14px;
 }
+/* Theme: follows the system until the visitor pulls the lamp cord (data-theme on <html>) */
 @media (prefers-color-scheme: dark){
-  :root{ color-scheme:dark;
+  :root:not([data-theme="light"]){ color-scheme:dark;
     --paper:#1A1824; --surface:#242131; --card:#2A2638; --ink:#ECE9F5; --muted:#A8A3BE; --rule:#37334A;
     --pigment:#8C9BFF; --on-pigment:#14122A; --pigment-soft:rgba(140,155,255,.12);
     --alert:#FF8A7F; --alert-bg:#3A2226;
     --plan:#5B6FE0; --act:#2F8F70; --observe:#8A6BC0; --correct:#C06A3E;
     --rail:#3E3952; --wire:#4E4866; --shadow:rgba(0,0,0,.6); --glass:rgba(26,24,36,.8); }
 }
+:root[data-theme="dark"]{ color-scheme:dark;
+    --paper:#1A1824; --surface:#242131; --card:#2A2638; --ink:#ECE9F5; --muted:#A8A3BE; --rule:#37334A;
+    --pigment:#8C9BFF; --on-pigment:#14122A; --pigment-soft:rgba(140,155,255,.12);
+    --alert:#FF8A7F; --alert-bg:#3A2226;
+    --plan:#5B6FE0; --act:#2F8F70; --observe:#8A6BC0; --correct:#C06A3E;
+    --rail:#3E3952; --wire:#4E4866; --shadow:rgba(0,0,0,.6); --glass:rgba(26,24,36,.8); }
+html.theme-fade, html.theme-fade *{transition:background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease!important}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
@@ -44,7 +53,27 @@ h1,h2,h3{text-wrap:balance}
 .nav a:hover{color:var(--ink)}
 .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:.78rem;color:var(--muted);padding:5px 12px;border:1px solid var(--rule);border-radius:999px;background:var(--card)}
 .badge i{width:7px;height:7px;border-radius:50%;background:var(--act);box-shadow:0 0 0 3px color-mix(in srgb,var(--act) 25%,transparent)}
-@media (max-width:720px){.nav{display:none}.topbar .wrap{justify-content:space-between}}
+@media (max-width:720px){.nav{display:none}.topbar .wrap{gap:12px}.brand{margin-right:auto}}
+@media (max-width:420px){.badge{display:none}}
+
+/* gallery lamp: the theme switch */
+button.lamp{padding:0;border:0;background:transparent;width:56px;height:44px;border-radius:10px;display:grid;place-items:center;cursor:pointer}
+button.lamp:hover:not(:disabled){filter:none;transform:none}
+.lamp svg{width:56px;height:44px;overflow:visible}
+.lamp .shade{fill:#B8924A;transition:fill .4s}
+.lamp .shade-hi{fill:#E2C27E;transition:opacity .4s}
+.lamp .arm{fill:none;stroke:#8E7243;stroke-width:2.2;stroke-linecap:round}
+.lamp .beam{opacity:0;transition:opacity .45s ease}
+.lamp .glow{opacity:0;transition:opacity .45s ease}
+.lamp .cord line{stroke:var(--muted);stroke-width:1.2}
+.lamp .cord circle{fill:#B8924A}
+.lamp .cord{transition:transform .18s cubic-bezier(.3,1.6,.5,1)}
+.lamp.on .beam{opacity:1}
+.lamp.on .glow{opacity:1}
+.lamp:not(.on) .shade{fill:#7E6A48}
+.lamp:not(.on) .shade-hi{opacity:.35}
+.lamp:hover .cord{transform:translateY(1.5px)}
+.lamp.pull .cord{transform:translateY(6px)}
 
 /* hero + gallery wall */
 .hero{padding:56px 0 0}
@@ -145,7 +174,10 @@ button.rec[aria-pressed="true"] .dot{animation:pulse 1s ease-in-out infinite}
 .exp p{margin:0 0 10px}
 .exp .q{font-style:italic;color:var(--muted)}
 .habits{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
-.habit{font-size:.82rem;padding:5px 12px;border-radius:12px;background:var(--pigment);color:var(--on-pigment);line-height:1.4}
+.habit{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start;padding:12px 14px;border-radius:10px;background:var(--pigment-soft);border:1px solid color-mix(in srgb,var(--pigment) 22%,transparent);width:100%}
+.habit svg{grid-row:span 2;width:18px;height:18px;margin-top:1px;color:var(--pigment)}
+.habit-k{font-family:var(--display);font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--pigment)}
+.habit-t{font-family:var(--display);font-weight:500;font-size:.92rem;line-height:1.4;color:var(--ink)}
 .demo-tag{display:inline-block;font-family:var(--display);font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--rule);border-radius:999px;padding:2px 9px;margin-right:6px}
 .meter{display:flex;gap:14px;align-items:center;margin-top:22px;padding:16px 18px;border:1px solid var(--rule);border-radius:12px;font-size:.9rem;color:var(--muted);background:var(--surface)}
 .meter b{font-family:var(--display);font-weight:800;color:var(--pigment);font-size:1.7rem;letter-spacing:-.02em;line-height:1;white-space:nowrap}
@@ -221,6 +253,22 @@ dialog.share-dlg::backdrop{background:rgba(20,16,40,.55);backdrop-filter:blur(3p
       <a href="#today">Today</a><a href="#agent">Agent</a><a href="#exhibitions">Exhibitions</a><a href="#patterns">Patterns</a>
     </nav>
     <span class="badge"><i aria-hidden="true"></i>Private by design</span>
+    <button class="lamp on" id="lamp" role="switch" aria-checked="true" aria-label="Gallery lights" title="Pull to turn the gallery lights off">
+      <svg viewBox="0 0 56 44" aria-hidden="true">
+        <defs>
+          <linearGradient id="beamGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFD98A" stop-opacity=".75"/>
+            <stop offset="1" stop-color="#FFD98A" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <polygon class="beam" points="15,15 41,15 54,44 2,44" fill="url(#beamGrad)"/>
+        <path class="arm" d="M4 2 C 8 10, 14 11, 20 10"/>
+        <rect class="shade" x="12" y="7" width="32" height="8" rx="4"/>
+        <rect class="shade-hi" x="15" y="8.5" width="22" height="1.6" rx=".8"/>
+        <ellipse class="glow" cx="28" cy="15.5" rx="13" ry="2" fill="#FFF1C9"/>
+        <g class="cord"><line x1="40" y1="15" x2="40" y2="27"/><circle cx="40" cy="28.6" r="2.3"/></g>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -454,7 +502,7 @@ function renderAgent(a){
   $("#paused").innerHTML = c.paused ? `<div class="paused"><p style="margin:0 0 10px">Experiments are paused because a check-in raised a safety flag. Nothing is lost.</p>
     <button class="ghost" id="resume">Resume experiments</button></div>` : "";
   $("#resume")?.addEventListener("click", () => runStep(true));
-  const habits = c.habits.length ? `<div class="habits">${c.habits.map(h=>`<span class="habit">Keeping: ${esc(a.drivers[h].habit)}</span>`).join("")}</div>` : "";
+  const habits = c.habits.length ? `<div class="habits">${c.habits.map(h=>`<div class="habit"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 10.3l2.6 2.6L14.2 7.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="habit-k">Keeping</span><span class="habit-t">${esc(a.drivers[h].habit)}</span></div>`).join("")}</div>` : "";
   $("#exp").innerHTML = x ? `<h3>${esc(x.habit)}</h3>
       <p>${esc(x.hypothesis)}</p>
       <p class="q">Daily question: “${esc(x.ask)}”</p>
@@ -659,6 +707,29 @@ $("#mic").addEventListener("click", () => rec && rec.state === "recording" ? sto
   }catch(err){ console.error(err) }
 })();
 $("#style").addEventListener("change", () => { try{ localStorage.setItem("mc-style", $("#style").value); }catch{} });
+
+// ---------- gallery lamp: light theme = lights on ----------
+const root = document.documentElement, darkQuery = matchMedia("(prefers-color-scheme: dark)");
+const theme = () => root.dataset.theme || (darkQuery.matches ? "dark" : "light");
+function syncLamp(){
+  const on = theme() === "light";
+  $("#lamp").classList.toggle("on", on);
+  $("#lamp").setAttribute("aria-checked", on);
+  $("#lamp").title = on ? "Pull to turn the gallery lights off" : "Pull to turn the gallery lights on";
+}
+$("#lamp").addEventListener("click", () => {
+  const next = theme() === "light" ? "dark" : "light";
+  $("#lamp").classList.add("pull"); setTimeout(() => $("#lamp").classList.remove("pull"), 220);
+  root.classList.add("theme-fade");
+  setTimeout(() => {
+    root.dataset.theme = next;
+    try{ localStorage.setItem("mc-theme", next); }catch{}
+    syncLamp(); loadInsights();   // the chart reads its colors from the theme
+  }, 140);
+  setTimeout(() => root.classList.remove("theme-fade"), 700);
+});
+darkQuery.addEventListener("change", () => { if(!root.dataset.theme){ syncLamp(); loadInsights(); } });
+syncLamp();
 
 loadGallery(); loadInsights(); loadAgent(); loadWeeks();
 </script>
