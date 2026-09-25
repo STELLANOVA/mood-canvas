@@ -98,6 +98,7 @@ Then click **Run next week** to watch the agent work through simulated weeks. Si
 | ![Gallery wall](docs/screenshots/01-gallery-wall.png) Gallery wall: better days hang higher | ![Agent and lab notebook](docs/screenshots/02-agent-lab-notebook.png) The current experiment, working memory and lab notebook |
 | ![Voice check-in](docs/screenshots/03-voice-checkin-painting.png) A voice check-in, transcribed locally, painted | ![Weekly exhibitions](docs/screenshots/04-weekly-exhibitions.png) Weekly exhibitions composed by FLUX.2 |
 | ![Share card](docs/screenshots/05-share-card.png) A share card: painting and a chosen caption, never your words | ![Crisis card](docs/screenshots/07-crisis-safety.png) Crisis language shows support options first |
+| ![Dark mode](docs/screenshots/12-dark-mode.png) Dark mode: pull the gallery lamp's cord | ![Patterns](docs/screenshots/06-trends-and-insights.png) Six weeks of patterns, from scores and tags only |
 
 ## License
 
