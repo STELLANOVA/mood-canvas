@@ -67,22 +67,54 @@ EXTRACT_SCHEMA = {
 }
 
 
-def art_prompt(s: dict) -> str:
-    """Turn mood signals (never the raw text) into a FLUX prompt."""
+# Painting styles. Labels credit public-domain painters; prompts describe technique only, never a
+# name, so FLUX doesn't imitate a specific artist's canvas (or forge a signature).
+STYLES = {
+    "mood": {"label": "Mood", "after": "", "prompt": ""},
+    "impressionist": {"label": "Impressionist", "after": "Monet",
+                      "prompt": "as a late Impressionist oil painting en plein air: broken, dappled strokes of pure "
+                                "color, soft edges, shimmering reflected light"},
+    "post-impressionist": {"label": "Post-Impressionist", "after": "Van Gogh",
+                           "prompt": "as a Post-Impressionist oil painting: thick swirling impasto, rhythmic curving "
+                                     "directional brushstrokes, an energetic textured sky"},
+    "woodblock": {"label": "Woodblock print", "after": "Hokusai",
+                  "prompt": "as a Japanese ukiyo-e woodblock print: flat areas of color, bold outlines, stylized "
+                            "waves and clouds, visible washi paper texture"},
+    "romantic": {"label": "Luminous Romantic", "after": "Turner",
+                 "prompt": "as a luminous Romantic oil painting: vaporous atmosphere, sea and sky dissolving into "
+                           "light, loose sweeping washes"},
+    "gilded": {"label": "Gilded", "after": "Klimt",
+               "prompt": "as a gilded Art Nouveau painting: shimmering gold-leaf ornament, mosaic-like patterned "
+                         "surfaces, decorative spirals"},
+    "abstract": {"label": "Abstract composition", "after": "Kandinsky",
+                 "prompt": "as an early abstract composition: floating circles, crossing lines and overlapping "
+                           "geometric color fields with a musical rhythm"},
+    "spiritual": {"label": "Spiritual abstraction", "after": "Hilma af Klint",
+                  "prompt": "as a spiritual abstraction: symmetrical organic forms, soft pastel geometry, spirals "
+                            "and petal shapes on a flat ground"},
+}
+NEGATIVE = "The canvas is unsigned: no signature, no initials, no text, no letters, no people, no faces."
+
+
+def art_prompt(s: dict, style: str = "mood") -> str:
+    """Turn mood signals (never the raw text) into a FLUX prompt. The style changes only the technique."""
     mood, energy = s["mood"], s["energy"]
-    if mood <= 3:
-        style = "heavy muted oil impasto, soft shadows, quiet and still"
-    elif mood <= 6:
-        style = "layered gouache, gentle diffused light, calm balance"
-    else:
-        style = "luminous watercolor washes, glowing light, open airy space"
+    palette = ", ".join(s["palette"])
     motion = ("sweeping energetic brushstrokes" if energy >= 7
               else "slow, soft blended strokes" if energy <= 3
               else "measured, steady brushwork")
-    palette = ", ".join(s["palette"])
-    return (f"Abstract expressive painting. {s['scene']} Style: {style}, {motion}. "
-            f"Color palette: {palette}. Fine art canvas texture, square composition. "
-            f"No people, no faces, no text, no letters, no signatures.")
+    if style in STYLES and style != "mood":
+        feel = "heavy and quiet" if mood <= 3 else "calm and balanced" if mood <= 6 else "bright and open"
+        return (f"A painting inspired by this scene: {s['scene']} Painted {STYLES[style]['prompt']}. "
+                f"The feeling is {feel}, with {motion}. Color accents: {palette}. Square composition. {NEGATIVE}")
+    if mood <= 3:
+        look = "heavy muted oil impasto, soft shadows, quiet and still"
+    elif mood <= 6:
+        look = "layered gouache, gentle diffused light, calm balance"
+    else:
+        look = "luminous watercolor washes, glowing light, open airy space"
+    return (f"Abstract expressive painting. {s['scene']} Style: {look}, {motion}. "
+            f"Color palette: {palette}. Fine art canvas texture, square composition. {NEGATIVE}")
 
 
 def _mood_word(m: float) -> str:

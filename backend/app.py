@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 import agent
 import services as S
-from prompts import exhibition_prompt
+from prompts import STYLES, exhibition_prompt
 
 app = FastAPI(title="Mood Canvas")
 STATIC = Path(__file__).parent / "static"
@@ -24,11 +24,17 @@ DOW = {1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6:
 class EntryIn(BaseModel):
     text: str = Field(min_length=3, max_length=4000)
     did_experiment: Optional[bool] = None
+    style: str = "mood"
 
 
 @app.get("/")
 def index():
     return FileResponse(STATIC / "index.html")
+
+
+@app.get("/api/styles")
+def styles():
+    return [{"id": k, "label": v["label"], "after": v["after"]} for k, v in STYLES.items()]
 
 
 @app.post("/api/entries")
@@ -52,7 +58,7 @@ async def create_entry(body: EntryIn):
         image_path, resources = "", []
     else:
         image_path, resources = await asyncio.gather(
-            S.paint(signals, entry_id), S.find_resources(topic))
+            S.paint(signals, entry_id, body.style if body.style in STYLES else "mood"), S.find_resources(topic))
 
     row = {
         "entry_id": entry_id, "user_id": S.USER_ID,
@@ -84,7 +90,7 @@ async def voice_status():
 
 
 @app.post("/api/voice")
-async def voice_entry(request: Request, did_experiment: Optional[bool] = None):
+async def voice_entry(request: Request, did_experiment: Optional[bool] = None, style: str = "mood"):
     wav = await request.body()  # held in memory only; never written to disk or logged
     if not wav.startswith(b"RIFF") or len(wav) > MAX_AUDIO_BYTES:
         raise HTTPException(400, "Expected a WAV recording under 10 MB.")
@@ -95,7 +101,7 @@ async def voice_entry(request: Request, did_experiment: Optional[bool] = None):
     del wav
     if len(text) < 3:
         raise HTTPException(422, "Couldn't make out any words. Try again a little closer to the mic.")
-    result = await create_entry(EntryIn(text=text[:4000], did_experiment=did_experiment))
+    result = await create_entry(EntryIn(text=text[:4000], did_experiment=did_experiment, style=style))
     return {**result, "transcript": text}
 
 

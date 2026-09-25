@@ -6,7 +6,10 @@ import os
 import re
 from pathlib import Path
 
+import io
+
 import httpx
+from PIL import Image
 from dotenv import load_dotenv
 
 from prompts import EXTRACT_SCHEMA, EXTRACT_SYSTEM, POSITIVES, STRESSORS, art_prompt
@@ -248,9 +251,9 @@ async def transcribe(wav: bytes) -> str:
 
 
 # ---------- Black Forest Labs: mood painting ----------
-async def paint(signals: dict, entry_id: str) -> str:
+async def paint(signals: dict, entry_id: str, style: str = "mood") -> str:
     """Returns a local /static path, or '' if painting is unavailable."""
-    body = {"prompt": art_prompt(signals), "width": 1024, "height": 1024}
+    body = {"prompt": art_prompt(signals, style), "width": 1024, "height": 1024}
     return await _flux(body, PAINT_DIR, entry_id)
 
 
@@ -278,6 +281,20 @@ async def _flux(body: dict, out_dir: Path, name: str) -> str:
     return ""
 
 
+def trim_signature_margin(data: bytes) -> bytes:
+    """Painting prompts pull in fake signatures, which land in the bottom corners however the prompt
+    is worded. Trim 10% from the bottom and 5% from each side; the aspect ratio stays the same."""
+    try:
+        im = Image.open(io.BytesIO(data)).convert("RGB")
+        w, h = im.size
+        out = io.BytesIO()
+        im.crop((round(w * .05), 0, round(w * .95), round(h * .90))).save(out, "JPEG", quality=92)
+        return out.getvalue()
+    except Exception as e:  # noqa: BLE001
+        print(f"[flux] trim skipped: {e}")
+        return data
+
+
 class _Moderated(Exception):
     pass
 
@@ -296,9 +313,8 @@ async def _flux_once(body: dict, out_dir: Path, name: str) -> str:
                 # BFL result URLs expire quickly, so download immediately
                 img = await c.get(p["result"]["sample"])
                 img.raise_for_status()
-                ext = "png" if "png" in img.headers.get("content-type", "") else "jpg"
-                path = out_dir / f"{name}.{ext}"
-                path.write_bytes(img.content)
+                path = out_dir / f"{name}.jpg"
+                path.write_bytes(trim_signature_margin(img.content))
                 return f"/static/{out_dir.name}/{path.name}"
             if status in ("Content Moderated", "Request Moderated"):
                 raise _Moderated(status)

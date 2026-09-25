@@ -128,6 +128,8 @@ dialog.share-dlg::backdrop{background:rgba(20,16,40,.55)}
 .share-body .acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .share-body a.dl{font-family:var(--display);font-weight:600;font-size:.88rem;padding:8px 14px;border:1px solid var(--pigment);border-radius:999px;text-decoration:none}
 
+.style-pick{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:.95rem;flex-wrap:wrap}
+.style-pick select{font:inherit;font-size:.95rem;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink)}
 .did{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:.95rem}
 .did input{width:18px;height:18px;accent-color:var(--pigment)}
 
@@ -178,6 +180,8 @@ dialog.share-dlg::backdrop{background:rgba(20,16,40,.55)}
       <h2>How was today?</h2>
       <label for="entry" class="hint">Write as much or as little as you like.</label>
       <textarea id="entry" placeholder="Slept badly again. The team meeting ran long and I felt invisible. Walked home through the park, which helped a little."></textarea>
+      <div class="style-pick"><label for="style">Painting style</label>
+        <select id="style"><option value="mood">Mood</option></select></div>
       <label class="did" id="didWrap" hidden><input type="checkbox" id="did"> <span id="didText"></span></label>
       <div class="row">
         <button id="go">Paint my day</button>
@@ -298,7 +302,7 @@ $("#go").addEventListener("click", async () => {
   if(text.length < 3){ $("#status").textContent = "Write a few words first."; return; }
   $("#go").disabled = true; $("#status").textContent = "Reading your day and mixing colors…";
   try{
-    const res = await fetch("/api/entries", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text, did_experiment: $("#didWrap").hidden ? null : $("#did").checked})});
+    const res = await fetch("/api/entries", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text, style: $("#style").value, did_experiment: $("#didWrap").hidden ? null : $("#did").checked})});
     if(!res.ok) throw new Error((await res.json()).detail || res.statusText);
     const r = await res.json();
     renderResult(r);
@@ -491,8 +495,9 @@ async function sendVoice(blob){
   $("#status").textContent = "Transcribing on this device, then mixing colors…";
   try{
     const wav = await toWav16k(blob);
-    const did = $("#didWrap").hidden ? "" : `?did_experiment=${$("#did").checked}`;
-    const res = await fetch(`/api/voice${did}`, {method:"POST", headers:{"Content-Type":"audio/wav"}, body:wav});
+    const q = new URLSearchParams({style: $("#style").value});
+    if(!$("#didWrap").hidden) q.set("did_experiment", $("#did").checked);
+    const res = await fetch(`/api/voice?${q}`, {method:"POST", headers:{"Content-Type":"audio/wav"}, body:wav});
     if(!res.ok) throw new Error((await res.json()).detail || res.statusText);
     const r = await res.json();
     renderResult(r);
@@ -510,6 +515,17 @@ $("#mic").addEventListener("click", () => rec && rec.state === "recording" ? sto
     $("#mic").hidden = !ok;
   }catch{}
 })();
+
+// ---------- painting styles (remembered per browser) ----------
+(async () => {
+  try{
+    const styles = await (await fetch("/api/styles")).json();
+    $("#style").innerHTML = styles.map(x => `<option value="${esc(x.id)}">${esc(x.label)}${x.after ? ` · after ${esc(x.after)}` : ""}</option>`).join("");
+    let saved = null; try{ saved = localStorage.getItem("mc-style"); }catch{}
+    if(saved && styles.some(x => x.id === saved)) $("#style").value = saved;
+  }catch(err){ console.error(err) }
+})();
+$("#style").addEventListener("change", () => { try{ localStorage.setItem("mc-style", $("#style").value); }catch{} });
 
 loadGallery(); loadInsights(); loadAgent(); loadWeeks();
 </script>
