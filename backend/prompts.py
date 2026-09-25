@@ -78,8 +78,10 @@ STYLES = {
                            "prompt": "as a Post-Impressionist oil painting: thick swirling impasto, rhythmic curving "
                                      "directional brushstrokes, an energetic textured sky"},
     "woodblock": {"label": "Woodblock print", "after": "Hokusai",
-                  "prompt": "as a Japanese ukiyo-e woodblock print: flat areas of color, bold outlines, stylized "
-                            "waves and clouds, visible washi paper texture"},
+                  # "ukiyo-e" pulls in artist signatures and publisher seals, so describe the woodcut technique instead
+                  "prompt": "in a woodcut printmaking style with flat layered color planes, bold outlines and "
+                            "stylized waves and clouds on fibrous paper; the print is plain, with no margins, "
+                            "cartouches or stamps"},
     "romantic": {"label": "Luminous Romantic", "after": "Turner",
                  "prompt": "as a luminous Romantic oil painting: vaporous atmosphere, sea and sky dissolving into "
                            "light, loose sweeping washes"},
@@ -93,7 +95,8 @@ STYLES = {
                   "prompt": "as a spiritual abstraction: symmetrical organic forms, soft pastel geometry, spirals "
                             "and petal shapes on a flat ground"},
 }
-NEGATIVE = "The canvas is unsigned: no signature, no initials, no text, no letters, no people, no faces."
+NEGATIVE = ("The canvas is unsigned: no signature, no initials, no seal stamps, no calligraphy, no text, "
+            "no letters, no people, no faces.")
 
 
 def art_prompt(s: dict, style: str = "mood") -> str:

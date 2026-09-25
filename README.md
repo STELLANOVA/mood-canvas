@@ -28,6 +28,8 @@ Journaling works, but nobody rereads their journal. Mood Canvas is a long-horizo
 
 **Painting styles.** Pick how your day is painted: Mood (the default, where the brushwork follows your mood), or a style after a public-domain painter: Impressionist (Monet), Post-Impressionist (Van Gogh), Woodblock print (Hokusai), Luminous Romantic (Turner), Gilded (Klimt), Abstract composition (Kandinsky) or Spiritual abstraction (Hilma af Klint). The scene, palette and energy still come from your check-in; the style changes only the technique. Prompts describe technique and never name a painter, so FLUX doesn't imitate a specific canvas. Painting prompts tend to produce fake signatures in the bottom corners however they're worded, so every image is trimmed by 10% at the bottom and 5% at the sides.
 
+![One check-in in eight styles](docs/screenshots/11-painting-styles.png)
+
 **Share a painting.** Any painting or exhibition can be shared as a card drawn in the browser: the painting, its title, one gentle caption you pick ("This is how I'm doing.", "A heavy one today."…) and, optionally, the date. It never includes your entry, scores or tags. Share with the system share sheet where the browser supports it, copy the image, or download a PNG.
 
 ## How it works

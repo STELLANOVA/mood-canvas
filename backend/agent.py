@@ -146,22 +146,28 @@ def local_scan(start: str, end: str) -> list[dict]:
 
 
 async def window(start: str, end: str) -> tuple:
+    local = local_window(start, end)
     try:
         data = await S.tb_pipe("window_stats", user_id=S.USER_ID, start=_ts(start), end=_ts(end))
-        if data and data[0].get("n"):
+        # Tinybird makes new events queryable a few seconds after ingest; if it has fewer rows than
+        # the local mirror it is still catching up, so its aggregates would be wrong.
+        if data and int(data[0].get("n") or 0) >= local["n"]:
             return data[0], "tinybird"
+        print(f"[tinybird] window_stats behind local mirror ({(data or [{}])[0].get('n')} < {local['n']} rows)")
     except Exception as e:  # noqa: BLE001
         print(f"[tinybird] window_stats: {e}")
-    return local_window(start, end), "local"
+    return local, "local"
 
 
 async def scan(start: str, end: str) -> tuple:
-    try:
-        data = await S.tb_pipe("driver_scan", user_id=S.USER_ID, start=_ts(start), end=_ts(end))
-        if data:
-            return data, "tinybird"
-    except Exception as e:  # noqa: BLE001
-        print(f"[tinybird] driver_scan: {e}")
+    _, src = await window(start, end)  # same freshness check; driver_scan has no row count of its own
+    if src == "tinybird":
+        try:
+            data = await S.tb_pipe("driver_scan", user_id=S.USER_ID, start=_ts(start), end=_ts(end))
+            if data:
+                return data, "tinybird"
+        except Exception as e:  # noqa: BLE001
+            print(f"[tinybird] driver_scan: {e}")
     return local_scan(start, end), "local"
 
 
