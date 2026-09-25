@@ -342,6 +342,11 @@ TOPIC_QUERIES = {
 _resource_cache: dict[str, list] = {}
 
 
+def _clip(text: str, n: int) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= n else text[:n].rsplit(" ", 1)[0].rstrip(",.;:") + "…"
+
+
 async def find_resources(topic: str) -> list[dict]:
     topic = topic if topic in TOPIC_QUERIES else "general"
     if topic in _resource_cache:
@@ -357,7 +362,7 @@ async def find_resources(topic: str) -> list[dict]:
                                    "country": "US", "locale": "en"})
             r.raise_for_status()
         results = [{"title": x.get("title", ""), "url": x.get("url", ""),
-                    "description": (x.get("description") or "")[:220]}
+                    "description": _clip(x.get("description") or "", 200)}
                    for x in r.json().get("results", []) if x.get("url")]
         _resource_cache[topic] = results
         return results
